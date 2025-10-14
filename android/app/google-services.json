@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "877978846301",
+    "project_id": "personeltakip-8fced",
+    "storage_bucket": "personeltakip-8fced.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:877978846301:android:ffc045dd1cee2c171279b4",
+        "android_client_info": {
+          "package_name": "com.example.personel_takip"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAU8egPTQyzZT_bKe_ZLd4BFv7Cm5LJkcM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
