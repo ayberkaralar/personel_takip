@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:personel_takip/screens/admin/battom.dart';
+import 'package:personel_takip/screens/admin/employee_list_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
@@ -9,6 +9,7 @@ import '../../models/attendance_model.dart';
 import '../../models/leave_model.dart';
 import 'attendance_list_screen.dart';
 import 'admin_leave_screen.dart';
+import 'package:personel_takip/screens/admin/employee_list_screen.dart';
 
 
 class AdminDashboard extends StatelessWidget {
@@ -79,6 +80,12 @@ class AdminDashboard extends StatelessWidget {
               title: const Text('Personel Listesi'),
               onTap: () {
                 Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EmployeeListScreen(),
+                  ),
+                );
                 
               },
             ),
