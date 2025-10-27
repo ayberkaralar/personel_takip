@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:personel_takip/screens/employee/employee_attandance_history_screen.dart';
 import 'package:personel_takip/services/location_services.dart';
+import 'package:personel_takip/services/location_tracking_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,12 +21,108 @@ class EmployeeHomeScreen extends StatefulWidget {
 class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   final LocationService _locationService = LocationService();
   final AttendanceService _attendanceService = AttendanceService();
+  final LocationTrackingService _locationTrackingService = LocationTrackingService();
   bool _isCheckingIn = false;
   bool _isCheckingOut = false;
+  bool _isLocationSharingEnabled = false;
 
   @override
   void initState() {
     super.initState();
+    _loadLocationSharingStatus();
+  }
+
+  @override
+  void dispose() {
+    // Konum paylaşımını durdur
+    _locationTrackingService.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadLocationSharingStatus() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.userModel;
+
+    if (user == null) return;
+
+    // Firestore'dan konum paylaşımı durumunu yükle
+    final location = await _locationTrackingService.getUserLocation(user.uid);
+    if (location != null && mounted) {
+      setState(() {
+        _isLocationSharingEnabled = location.isActive;
+      });
+
+      // Eğer aktifse konum paylaşımını başlat
+      if (_isLocationSharingEnabled) {
+        _locationTrackingService.startLocationSharing(
+          userId: user.uid,
+          userName: user.name,
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleLocationSharing(bool value) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.userModel;
+
+    if (user == null) return;
+
+    setState(() {
+      _isLocationSharingEnabled = value;
+    });
+
+    try {
+      if (value) {
+        // Konum paylaşımını aç
+        await _locationTrackingService.updateCurrentLocation(
+          userId: user.uid,
+          userName: user.name,
+        );
+        await _locationTrackingService.enableLocationSharing(user.uid);
+
+        // Periyodik güncellemeyi başlat
+        _locationTrackingService.startLocationSharing(
+          userId: user.uid,
+          userName: user.name,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Konum paylaşımı açıldı'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // Konum paylaşımını kapat
+        _locationTrackingService.stopLocationSharing();
+        await _locationTrackingService.disableLocationSharing(user.uid);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Konum paylaşımı kapatıldı'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLocationSharingEnabled = !value; // Hata durumunda geri al
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleCheckIn() async {
@@ -483,7 +580,70 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
               ),
               
               const SizedBox(height: 24),
-              
+
+              // Konum Paylaşımı Kartı
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _isLocationSharingEnabled
+                              ? Colors.green.shade50
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          _isLocationSharingEnabled
+                              ? Icons.location_on
+                              : Icons.location_off,
+                          color: _isLocationSharingEnabled
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Konum Paylaşımı',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              _isLocationSharingEnabled
+                                  ? 'Konumunuz yöneticilerle paylaşılıyor'
+                                  : 'Konumunuz paylaşılmıyor',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: _isLocationSharingEnabled,
+                        onChanged: _toggleLocationSharing,
+                        activeColor: Colors.green,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               // Konum Haritası
               const Text(
                 'Konumum',
@@ -492,9 +652,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               const LocationMapWidget(),
               
               const SizedBox(height: 24),

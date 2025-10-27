@@ -9,7 +9,7 @@ import '../../models/attendance_model.dart';
 import '../../models/leave_model.dart';
 import 'attendance_list_screen.dart';
 import 'admin_leave_screen.dart';
-import 'package:personel_takip/screens/admin/employee_list_screen.dart';
+import 'map_tracking_screen.dart';
 
 
 class AdminDashboard extends StatelessWidget {
@@ -86,7 +86,20 @@ class AdminDashboard extends StatelessWidget {
                     builder: (context) => const EmployeeListScreen(),
                   ),
                 );
-                
+
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.map),
+              title: const Text('Harita Takibi'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MapTrackingScreen(),
+                  ),
+                );
               },
             ),
             const Divider(),
